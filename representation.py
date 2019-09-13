@@ -247,7 +247,7 @@ class AbstractState(object):
             sign = sign
             from_face = self.edges[0].face
             enter_face = from_face
-            if (sign==1)==(over_idx==0):
+            if (sign==1)==(over_idx==self.pts):
                 from_face_edges = [2*(under_idx-1), 2*under_idx]
                 enter_face_edges = [2*under_idx+1, 2*under_idx-1]
             else:
@@ -255,7 +255,10 @@ class AbstractState(object):
                 from_face_edges = [2*under_idx+1, 2*under_idx-1]
             end_idx = over_idx
         elif over_idx in [1, self.pts]:
+            input_sign = sign
             sign = -1 if (prev_under_left==prev_over_left)==(over_idx==1) else 1
+            if input_sign != sign:
+                return False
             from_face = self.edges[2*over_idx].face
             if prev_over_left==prev_under_left:
                 enter_face = self.edges[2*under_idx+1].face
@@ -267,7 +270,10 @@ class AbstractState(object):
                 from_face_edges = [2*under_idx+1, 2*under_idx-1]
             end_idx = over_idx
         elif under_idx in [1, self.pts]:
+            input_sign = sign
             sign = 1 if (prev_under_left==prev_over_left)==(under_idx==1) else -1
+            if input_sign != sign:
+                return False
             from_face = self.edges[2*under_idx].face
             if prev_under_left==prev_over_left:
                 enter_face = self.edges[2*over_idx+1].face
@@ -356,7 +362,12 @@ class AbstractState(object):
             #print('something is wrong in state')
             return False
 
-        if over_idx < under_idx or (over_idx==under_idx and over_before_under==1):
+        if over_idx > under_idx and over_before_under == 1:
+            return False
+        if over_idx < under_idx and over_before_under == -1:
+            return False
+
+        if over_before_under==1:
             self.addPoint(over_idx+1)
             self.addPoint(over_idx+2)
             self.addPoint(under_idx+3)
@@ -375,6 +386,11 @@ class AbstractState(object):
         if faces[1]==faces[2] or faces[1]==faces[3]:
             if shared_face is None or (left==-1):
                 shared_face = faces[1]
+
+        if shared_face == faces[0] and left==-1:
+            return False
+        if shared_face == faces[1] and left==1:
+            return False
 
         # which two points form a pair and sign of intersections
         # depend on the diretion of segment relative to the common loop.
