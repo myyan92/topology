@@ -258,6 +258,8 @@ class AbstractState(object):
             input_sign = sign
             sign = -1 if (prev_under_left==prev_over_left)==(over_idx==1) else 1
             if input_sign != sign:
+                self.removePoint(max(over_idx,under_idx))
+                self.removePoint(min(over_idx,under_idx))
                 return False
             from_face = self.edges[2*over_idx].face
             if prev_over_left==prev_under_left:
@@ -273,6 +275,8 @@ class AbstractState(object):
             input_sign = sign
             sign = 1 if (prev_under_left==prev_over_left)==(under_idx==1) else -1
             if input_sign != sign:
+                self.removePoint(max(over_idx,under_idx))
+                self.removePoint(min(over_idx,under_idx))
                 return False
             from_face = self.edges[2*under_idx].face
             if prev_under_left==prev_over_left:
@@ -350,6 +354,11 @@ class AbstractState(object):
         temp_face_idx = len(self.faces)+5
         self.reindex_face(0, temp_face_idx)
 
+        def undo():
+            self.reindex_face(0, self.edges[1].face)
+            self.link_edges(1,0)
+            self.link_edges(2*self.pts, 2*self.pts+1)
+
         # To be a valid move, the two segments must share a loop.
         # It is possible the two segments share both left and right loop.
         # In this case the left argument is True to cross from left of the over segment.
@@ -357,14 +366,32 @@ class AbstractState(object):
                  self.edges[2*under_idx].face, self.edges[2*under_idx+1].face]
         if len(set(faces)) == 4:
             #print('invalid R2 move')
+            undo()
             return False
         if len(set(faces)) < 2:
             #print('something is wrong in state')
+            undo()
+            return False
+
+        shared_face = None
+        if faces[0]==faces[2] or faces[0]==faces[3]:
+            shared_face = faces[0]
+        if faces[1]==faces[2] or faces[1]==faces[3]:
+            if shared_face is None or (left==-1):
+                shared_face = faces[1]
+
+        if shared_face == faces[0] and left==-1:
+            undo()
+            return False
+        if shared_face == faces[1] and left==1:
+            undo()
             return False
 
         if over_idx > under_idx and over_before_under == 1:
+            undo()
             return False
         if over_idx < under_idx and over_before_under == -1:
+            undo()
             return False
 
         if over_before_under==1:
@@ -380,17 +407,6 @@ class AbstractState(object):
             self.addPoint(over_idx+4)
             over_idx += 2
 
-        shared_face = None
-        if faces[0]==faces[2] or faces[0]==faces[3]:
-            shared_face = faces[0]
-        if faces[1]==faces[2] or faces[1]==faces[3]:
-            if shared_face is None or (left==-1):
-                shared_face = faces[1]
-
-        if shared_face == faces[0] and left==-1:
-            return False
-        if shared_face == faces[1] and left==1:
-            return False
 
         # which two points form a pair and sign of intersections
         # depend on the diretion of segment relative to the common loop.
@@ -458,9 +474,7 @@ class AbstractState(object):
             if self.edges[self.faces[f1_idx].edge].face != f1_idx:
                 self.faces[f1_idx].edge=f1_edges[0]
         # undo the virtual link between open ends.
-        self.reindex_face(0, self.edges[1].face)
-        self.link_edges(1,0)
-        self.link_edges(2*self.pts, 2*self.pts+1)
+        undo()
         return True
 
 
