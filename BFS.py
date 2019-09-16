@@ -7,16 +7,11 @@ def generate_next(state):
     # cross action
     for over_idx in range(0, state.pts+1):
         for under_idx in range(0, state.pts+1):
-            new_state = copy.deepcopy(state)
-            success = new_state.cross(over_idx, under_idx)
-            if success:
-                action = {'move':'cross', 'over_idx':over_idx, 'under_idx':under_idx, 'sign':1}
-                yield new_state, action
-            if (over_idx in [0,state.pts]) and (under_idx in [0,state.pts]):
-                new_state =copy.deepcopy(state)
-                success = new_state.cross(over_idx, under_idx, -1)
+            for sign in [-1, 1]:
+                new_state = copy.deepcopy(state)
+                success = new_state.cross(over_idx, under_idx, sign)
                 if success:
-                    action = {'move':'cross', 'over_idx':over_idx, 'under_idx':under_idx, 'sign':-1}
+                    action = {'move':'cross', 'over_idx':over_idx, 'under_idx':under_idx, 'sign':sign}
                     yield new_state, action
 
     # R1 action
@@ -32,27 +27,13 @@ def generate_next(state):
     # R2 action
     for over_idx in range(0, state.pts+1):
         for under_idx in range(0, state.pts+1):
-            new_state = copy.deepcopy(state)
-            success = new_state.Reide2(over_idx, under_idx, 1)
-            if success:
-                action = {'move':'R2', 'over_idx':over_idx, 'under_idx':under_idx, 'left':1, 'over_before_under':1}
-                yield new_state, action
-            new_state_2 = copy.deepcopy(state)
-            success = new_state_2.Reide2(over_idx, under_idx, -1)
-            if success and new_state_2 != new_state:
-                action = {'move':'R2', 'over_idx':over_idx, 'under_idx':under_idx, 'left':-1, 'over_before_under':1}
-                yield new_state_2, action
-            if over_idx==under_idx:
-                new_state = copy.deepcopy(state)
-                success = new_state.Reide2(over_idx, under_idx, 1, -1)
-                if success:
-                    action = {'move':'R2', 'over_idx':over_idx, 'under_idx':under_idx, 'left':1, 'over_before_under':-1}
-                    yield new_state, action
-                new_state_2 = copy.deepcopy(state)
-                success = new_state_2.Reide2(over_idx, under_idx, -1, -1)
-                if success:
-                    action = {'move':'R2', 'over_idx':over_idx, 'under_idx':under_idx, 'left':-1, 'over_before_under':-1}
-                    yield new_state_2, action
+            for left in [-1, 1]:
+                for obu in [-1, 1]:
+                    new_state = copy.deepcopy(state)
+                    success = new_state.Reide2(over_idx, under_idx, left=left, over_before_under=obu)
+                    if success:
+                        action = {'move':'R2', 'over_idx':over_idx, 'under_idx':under_idx, 'left':left, 'over_before_under':obu}
+                        yield new_state, action
 
 
 def bfs(start, goal, max_depth=None):
