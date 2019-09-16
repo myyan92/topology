@@ -9,7 +9,11 @@ def find_intersections(state):
         for j in range(i+2, state.shape[0]-1):
             intersect = intersection(state[i][:2], state[i+1][:2], state[j][:2], state[j+1][:2])
             if intersect is not None:
-                over = state[i][2]+state[i+1][2] > state[j][2]+state[j+1][2]
+                alpha = np.linalg.norm(intersect-state[i][:2]) / np.linalg.norm(state[i+1][:2]-state[i][:2])
+                beta = np.linalg.norm(intersect-state[j][:2]) / np.linalg.norm(state[j+1][:2]-state[j][:2])
+                h_i = alpha*state[i+1][2]+(1-alpha)*state[i][2]
+                h_j = beta*state[j+1][2]+(1-beta)*state[j][2]
+                over = h_i > h_j
                 sign = np.cross(state[i+1][:2]-state[i][:2], state[j+1][:2]-state[j][:2])
                 sign = sign > 0
                 if not over:
