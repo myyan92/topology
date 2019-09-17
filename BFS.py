@@ -75,6 +75,45 @@ def bfs(start, goal, max_depth=None):
         path.insert(0, visited[0])
     return path, path_action
 
+
+def bfs_all_path(start, goal, max_depth):
+    # find all paths connecting start to goal.
+    # limit search using max_depth.
+    visited, parents, actions = [start], [0], [{}]
+    depth_index = [0]
+    if start == goal:
+        return [start], []
+    head = 0
+    goal_index = []
+    while head < len(visited):
+        state = visited[head]
+        if head>depth_index[-1]:
+            depth_index.append(len(visited)-1)
+        if max_depth is not None and len(depth_index) > max_depth:
+            break
+        for new_state, action in generate_next(state):
+            visited.append(new_state)
+            parents.append(head)
+            actions.append(action)
+            if new_state == goal:
+                goal_index.append(len(visited)-1)
+        head += 1
+
+    # backtrack to find solutions
+    paths = []
+    for idx in goal_index:
+        current = idx
+        path = [visited[current]]
+        path_action = [actions[current]]
+        while parents[current]>0:
+            current = parents[current]
+            path.insert(0, visited[current])
+            path_action.insert(0, actions[current])
+        path.insert(0, visited[0])
+        paths.append((path, path_action))
+    return paths
+
+
 if __name__=="__main__":
     start = AbstractState()
     goal = AbstractState()
@@ -83,3 +122,5 @@ if __name__=="__main__":
     goal.cross(4,2)
     path, path_action = bfs(start, goal)
     print(path)
+    paths = bfs_all_path(start, goal, max_depth=3)
+    print(paths)

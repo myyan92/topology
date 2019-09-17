@@ -1,17 +1,15 @@
 # Run this code only using python3
-from topology.representation import AbstractState
+from topology.representation import AbstractState, reverse_action
 import random, copy
 import pdb
 
 def generate_next(state):
     # undo cross action
-    print("undo cross head")
     new_state = copy.deepcopy(state)
     success = new_state.undo_cross(True)
     if success:
         action = {'move':'undo_cross', 'head':True}
         yield new_state, action
-    print("undo cross tail")
     new_state =copy.deepcopy(state)
     success = new_state.undo_cross(False)
     if success:
@@ -20,7 +18,6 @@ def generate_next(state):
 
     # undo R1 action
     for idx in range(1, state.pts+1):
-        print("undo R1", idx)
         new_state = copy.deepcopy(state)
         success = new_state.undo_Reide1(idx)
         if success:
@@ -30,7 +27,6 @@ def generate_next(state):
     # R2 action
     for over_idx in range(1, state.pts):
         for under_idx in range(1, state.pts):
-            print("undo R2", over_idx, under_idx)
             new_state = copy.deepcopy(state)
             success = new_state.undo_Reide2(over_idx, under_idx)
             if success:
@@ -68,7 +64,39 @@ def bfs(start, goal):
             path.insert(0, visited[head])
             path_action.insert(0, actions[head])
         path.insert(0, visited[0])
-    return path
+    return path, path_action
+
+
+def bfs_all_path(start, goal):
+    # find all paths from start to goal
+    # note goal should be the simpler state.
+    visited, parents, actions = [start], [0], [{}]
+    head = 0
+    goal_index = []
+    while head < len(visited):
+        state = visited[head]
+        for new_state, action in generate_next(state):
+            visited.append(new_state)
+            parents.append(head)
+            actions.append(action)
+            if new_state == goal:
+                goal_index.append(len(visited)-1)
+        head += 1
+
+    # backtrack to find solution
+    paths = []
+    for idx in goal_index:
+        current = idx
+        path = [visited[current]]
+        path_action = [actions[current]]
+        while parents[current]>0:
+            current = parents[current]
+            path.insert(0, visited[current])
+            path_action.insert(0, actions[current])
+        path.insert(0, visited[0])
+        paths.append((path, path_action))
+    return paths
+
 
 if __name__=="__main__":
     start = AbstractState()
@@ -76,5 +104,18 @@ if __name__=="__main__":
     goal.Reide1(0, 1, 1)
     goal.cross(1,2)
     goal.cross(4,2)
-    path = bfs(goal, start)
-    print(path[::-1])
+    path, path_action = bfs(goal, start)
+    reverse_path = path[::-1]
+    reverse_path_action = [reverse_action(path_action[i], path[i], path[i+1])
+                           for i in range(len(path_action))]
+    reverse_path_action = reverse_path_action[::-1]
+    print(reverse_path, reverse_path_action)
+
+    paths = bfs_all_path(goal, start)
+    reverse_paths = []
+    for path, path_action in paths:
+        reverse_path = path[::-1]
+        reverse_path_action = [reverse_action(path_action[i], path[i], path[i+1])
+                               for i in range(len(path_action))]
+        reverse_path_action = reverse_path_action[::-1]
+        print(reverse_path, reverse_path_action)

@@ -480,6 +480,8 @@ class AbstractState(object):
 
     def undo_cross(self, head):
         # if head=True, remove intersection point 1, otherwise remove prev_state.pts
+        if self.pts == 0:
+            return False
         if head:
             end_idx = 1
             mid_idx = self.points[1].over or self.points[1].under
@@ -488,7 +490,8 @@ class AbstractState(object):
             end_idx = self.pts
             mid_idx = self.points[-2].over or self.points[-2].under
             end_edges = [2*self.pts-2, 2*self.pts, 2*self.pts+1, 2*self.pts-1]
-
+        if end_idx == mid_idx+1 or end_idx == mid_idx-1:
+            return False  # should call undo_Reide1
         f1_edges = [end_edges[0], self.edges[end_edges[0]].next]
         f2_edges = [self.edges[end_edges[1]].prev, end_edges[1], end_edges[2], self.edges[end_edges[2]].next]
         f3_edges = [self.edges[end_edges[3]].prev, end_edges[3]]
@@ -519,6 +522,8 @@ class AbstractState(object):
         return True
 
     def undo_Reide1(self, idx):
+        if idx == 0 or idx > self.pts:
+            return False
         other_idx = self.points[idx].over or self.points[idx].under
         if other_idx != idx+1:
             #print("invalid undo R1 move")
@@ -551,7 +556,7 @@ class AbstractState(object):
 
     def undo_Reide2(self, over_idx, under_idx):
         if (over_idx==0) or (over_idx >= self.pts) or (under_idx==0) or (under_idx >= self.pts):
-            raise ValueError("invalid over or under index for undo R2 move")
+            return False
         if (self.points[over_idx].under is None) or (self.points[over_idx+1].under is None):
             #print("invalid undo R2 move")
             return False
