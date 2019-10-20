@@ -82,7 +82,7 @@ def bfs_all_path(start, goal, max_depth):
     visited, parents, actions = [start], [0], [{}]
     depth_index = [0]
     if start == goal:
-        return [start], []
+        return [([start], [])]
     head = 0
     goal_index = []
     while head < len(visited):
