@@ -62,8 +62,8 @@ def intersect2topology(intersections, update_edges=True, update_faces=True):
             next_edge.face = new_face_idx
             while next_edge.next != start_edge_idx:
                 visited_edge[next_edge.next] = True
-                next_edge.face = new_face_idx
                 next_edge = topology.edges[next_edge.next]
+                next_edge.face = new_face_idx
     return topology
 
 def state2topology(state, update_edges, update_faces):
