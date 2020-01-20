@@ -37,25 +37,16 @@ for _ in range(3000):
     batch_actions.append(actions)
     traj_params.append((action_node/63, action_traj, height))
 
-#dynamic_inference = physbam_2d(' -disable_collisions -stiffen_linear 25.884  -stiffen_bending 64.297')
-#states = dynamic_inference.execute_batch(start_state[:,:2], batch_actions)
 dynamic_inference = physbam_3d(' -friction 0.1 -stiffen_linear 1.223 -stiffen_bending 1.218')
 
-all_states = dynamic_inference.execute_batch(start_state, batch_actions, return_3d=True)
-traj_params = [tj for st,tj in zip(all_states, traj_params) if st is not None]
-states = [st for st in all_states if st is not None]
+start_state_raw = state_to_mesh(start_state_raw)
+start_state_raw = start_state_raw.dot(np.array([[1,0,0],[0,0,1],[0,-1,0]]))
+all_states_raw = dynamic_inference.execute_batch(start_state_raw, batch_actions, return_traj=False, reset_spring=True)
+traj_params = [tj for st,tj in zip(all_states_raw, traj_params) if st is not None]
+states = [0.5*(st[:64]+st[64:]) for st in all_states_raw if st is not None]
 
-#lifted_states = []
-#for state,action in zip(states, batch_actions):
-#    state_z = np.arange(64)
-#    state_z = (state_z - action[0][0])**2/32
-#    state_z = np.exp(-state_z)
-#    state = np.concatenate([state, state_z[:,np.newaxis]],axis=-1)
-#    lifted_states.append(state)
-lifted_states = states
-#start_abstract_state = AbstractState()
 start_abstract_state, _ = state2topology(start_state, update_edges=True, update_faces=True)
-end_abstract_state = [state2topology(state, update_edges=True, update_faces=False) for state in lifted_states]
+end_abstract_state = [state2topology(state, update_edges=True, update_faces=False) for state in states]
 
 dataset_abstract_actions = []
 dataset_traj_params = []
