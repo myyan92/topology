@@ -1,7 +1,6 @@
 from povray_render.sample_spline import *
 from povray_render.lift_3d import intersection
 from dynamics_inference.dynamic_models import *
-from physbam_python.rollout_physbam_3d import rollout_single as rollout_single_3d
 import numpy as np
 import matplotlib.pyplot as plt
 import pdb
@@ -82,6 +81,7 @@ class CEM(object):
         self.requested_intersections = [(10, 40)]
         self.requested_loops = [[(0,1)]]
         self.action_node = 0
+        assert(dynamic_type=='physbam_2d')
         self.dynamics = physbam_2d()
 
     def sample(self):
@@ -165,15 +165,6 @@ if __name__ == "__main__":
     with open('nominal_traj_1.action', 'w') as f:
         for action in actions:
             f.write('%d %f %f\n'%(action[0], action[1][0], action[1][1]))
-
-    # open-loop execute in 3D sim. Directly using rollout_single to keep files and monitor stability.
-#    actions = samples[:,1:]-samples[:,:-1]
-#    actions = np.concatenate([actions, np.zeros((1,samples.shape[1]-1)), np.ones((1,samples.shape[1]-1))/63.0*action_node], axis=0)
-#    actions = actions.transpose()
-#    actions = np.concatenate([np.array([[0.0,0.0,0.05, action_node/63.0]]), actions, np.array([[0.0,0.0,-0.05, action_node/63.0]])], axis=0)
-#    final_state = rollout_single_3d(identifier.current_state, actions,
-#                                    physbam_args=' -dt 1e-3  -friction 0.176 -stiffen_linear 2.223 -stiffen_bending 0.218',
-#                                    keep_files=True, curve_proto_file='1.state', action_proto_file='1.action', output_dir='1-output/')
 
     plt.plot(final_state[:,0], final_state[:,1])
     plt.axis('equal')

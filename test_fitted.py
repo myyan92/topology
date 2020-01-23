@@ -52,39 +52,18 @@ for i in range(200):
     moves = traj[1:]-traj[:-1]
     actions = [(action_node, m) for m in moves]
     batch_actions.append(actions)
-    traj_params.append((action_node/63, action_traj))
+    traj_params.append((action_node/63, action_traj, height))
 
-#dynamic_inference = physbam_2d(' -disable_collisions -stiffen_linear 25.884  -stiffen_bending 64.297')
-#states = dynamic_inference.execute_batch(start_state[:,:2], batch_actions)
+dynamic_inference = physbam_3d(' -friction 0.1 -stiffen_linear 0.232 -stiffen_bending 0.6412 -self_friction 0.4649')
 
-#lifted_states = []
-#for state,action in zip(states, batch_actions):
-#    state_z = np.arange(64)
-#    state_z = (state_z - action[0][0])**2/32
-#    state_z = np.exp(-state_z)
-#    state = np.concatenate([state, state_z[:,np.newaxis]],axis=-1)
-#    lifted_states.append(state)
+start_state_raw = state_to_mesh(start_state_raw)
+start_state_raw = start_state_raw.dot(np.array([[1,0,0],[0,0,1],[0,-1,0]]))
+all_states_raw = dynamic_inference.execute_batch(start_state_raw, batch_actions, return_traj=False, reset_spring=True)
+traj_params = [tj for st,tj in zip(all_states_raw, traj_params) if st is not None]
+states = [0.5*(st[:64]+st[64:]) for st in all_states_raw if st is not None]
 
-dynamic_inference = physbam_3d(' -friction 0.1369 -stiffen_linear 0.232 -stiffen_bending 0.6412 -self_friction 0.4649')
-
-# simulate in small batches to reduce effect of simulation failure.
-all_states = []
-minibatch_size=15
-for i in range(0,200,minibatch_size):
-    minibatch_actions = batch_actions[i:min(i+minibatch_size,len(batch_actions))]
-    try:
-        states = dynamic_inference.execute_batch(start_state, minibatch_actions, return_3d=True)
-    except:
-        states = [None]*minibatch_size
-        print("Warning: some simulation failed!")
-        print(traj_params[i:min(i+minibatch_size,len(batch_actions))])
-    all_states.extend(states)
-
-traj_params = [tj for st,tj in zip(all_states, traj_params) if st is not None]
-lifted_states = [st for st in all_states if st is not None]
-
-start_abstract_state,_ = state2topology(start_state, update_edges=True, update_faces=True)
-end_abstract_state = [state2topology(state, update_edges=True, update_faces=False) for state in lifted_states]
+start_abstract_state, _ = state2topology(start_state, update_edges=True, update_faces=True)
+end_abstract_state = [state2topology(state, update_edges=True, update_faces=False) for state in states]
 
 dataset_abstract_actions = []
 dataset_traj_params = []
@@ -113,6 +92,4 @@ for abstract_action, traj_param in zip(dataset_abstract_actions, dataset_traj_pa
         dataset[abstract_action_str] = [traj_param]
 
 pdb.set_trace()
-#with open('gen_data.pkl', 'wb') as f:
-#    pickle.dump(dataset, f)
 
