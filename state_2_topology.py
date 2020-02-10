@@ -68,5 +68,31 @@ def intersect2topology(intersections, update_edges=True, update_faces=True):
 
 def state2topology(state, update_edges, update_faces):
     intersections = find_intersections(state)
-    topology = intersect2topology(intersections, update_edges, update_faces)
+    it_points = [it[0] for it in intersections] + [it[1] for it in intersections]
+    new_intersections = intersections
+    while len(set(it_points)) < len(it_points):
+        # deduplicate by breaking segment into smaller ones.
+        it_points = sorted(it_points) + [64]
+        segs = []
+        current_pt = 0
+        current_rep_count = 0
+        for it in it_points:
+            if it > current_pt:
+                if current_rep_count < 2:
+                    segs.append(state[current_pt:it])
+                else:
+                    alpha = np.linspace(0.0,1.0,current_rep_count*2+1)
+                    points = state[current_pt]*(1-alpha[0:-1,np.newaxis]) + state[current_pt+1]*alpha[0:-1,np.newaxis]
+                    segs.append(points)
+                    segs.append(state[current_pt+1:it])
+                current_pt = it
+                current_rep_count = 1
+            else:
+                current_rep_count +=1
+
+        new_state = np.concatenate(segs, axis=0)
+        new_intersections = find_intersections(new_state)
+        it_points = [it[0] for it in new_intersections] + [it[1] for it in new_intersections]
+
+    topology = intersect2topology(new_intersections, update_edges, update_faces)
     return topology, intersections
